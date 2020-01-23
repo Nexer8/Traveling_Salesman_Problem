@@ -6,6 +6,7 @@
 #include <c++/4.8.3/algorithm>
 #include <ostream>
 #include <iostream>
+#include <c++/4.8.3/map>
 
 #define STARTING_TEMPERATURE 1e9
 #define STOPPING_TEMPERATURE 0.01
@@ -825,66 +826,61 @@ void Graph::simulated_annealing() {
     cout << "\n";
 }
 
-vector<int> Graph::gen_random_path() {
-    vector<int> path;
-    path.reserve(dimension);
-    for (int i = 0; i < dimension; i++) {
-        path.push_back(i);
-    }
-    random_shuffle(path.begin(), path.end());
-
-    return path;
-}
-
 void Graph::generate_population() {
     population.reserve(POPULATION_SIZE);
     fitness.reserve(POPULATION_SIZE);
 
+    vector<int> route;
+    for (int i = 0; i < dimension; i++) {
+        route.push_back(i);
+    }
+
+    // draw new permutations and push them to the population vector
     for (int i = 0; i < POPULATION_SIZE; ++i) {
-        vector<int> permutation = gen_random_path();
-        population.push_back(permutation);
-        fitness.push_back(calculate_cost(&permutation[0]));
+        fitness.push_back(gen_random_path_cost(&route[0]));
+        population.push_back(route);
     }
 }
 
-void Graph::choose_population() {
-    vector<vector<int>> selected_population;
-    selected_population.reserve(POPULATION_SIZE);
+void Graph::select_mating_pool_tournament() { // tournament mating pool selection
+    vector<vector<int>> mating_pool;
+    mating_pool.reserve(POPULATION_SIZE);
 
     for (int j = 0; j < POPULATION_SIZE; ++j) {
-        int best = INT32_MAX;
-        int best_index = -1;
+        int best = INT_MAX;
+        int best_idx;
         for (int i = 0; i < NUMBER_OF_TOURNAMENTS; ++i) {
-            int random_index = rand() % POPULATION_SIZE;
-            int random_index_value = fitness[random_index];
-            if (best > random_index_value) {
-                best = random_index_value;
-                best_index = random_index;
+            int rand_idx = rand() % POPULATION_SIZE; // draw a random index
+            int rand_idx_val = fitness[rand_idx];
+            if (best > rand_idx_val) { // choose the best permutation from the randomly generated ones
+                best = rand_idx_val;
+                best_idx = rand_idx;
             }
         }
-        selected_population.push_back(population[best_index]);
+        mating_pool.push_back(population[best_idx]);
     }
-    population = selected_population;
-    for (int k = 0; k < POPULATION_SIZE; ++k) {
-        this->fitness[k] = calculate_cost(&population[k][0]);
+    population = mating_pool;
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        fitness[i] = calculate_cost(&population[i][0]);
     }
 }
 
-void Graph::ordered_crossover(vector<int> &first_parent, vector<int> &second_parent) {
+static void OX(vector<int> &first_parent, vector<int> &second_parent) {
+    int dimension = first_parent.size();
     int k1, k2;
     vector<int> first_child(dimension, -1);
     vector<int> second_child(dimension, -1);
 
     do {
-        k1 = rand() % (dimension - 2) + 1;
-        k2 = rand() % (dimension - 2) + 1;  //in case of hitting last index, while loop won't break (numbers from 1 to n-1)
+        k1 = rand() % (dimension -1);
+        k2 = rand() % (dimension -1);  //in case of hitting last index, while loop won't break (numbers from 1 to n-1)
     } while (k1 == k2);
 
     if (k1 > k2) {
         swap(k1, k2);
     }
 
-    for (int i = k1; i <= k2; ++i) {
+    for (int i = k1; i <= k2; i++) {
         first_child[i] = second_parent[i];
         second_child[i] = first_parent[i];
     }
@@ -894,19 +890,19 @@ void Graph::ordered_crossover(vector<int> &first_parent, vector<int> &second_par
 
     while (child_iterator != first_child.begin() + k1) {
         if (first_child.end() ==
-            find(first_child.begin(), first_child.end(), *parent_iterator)) { // jesli w potomku nie ma miasta z rodzica
-            *child_iterator = *parent_iterator;
+            find(first_child.begin(), first_child.end(), *parent_iterator)) { // if a child does not have parent's gene (city)
+            *child_iterator = *parent_iterator; // value of child's gene = value of parent's gene
 
-            if (child_iterator == first_child.end() - 1)    //end zwraca iterator ustawiony na element 'past the end'
-                child_iterator = first_child.begin();       //powrot do poczatku
+            if (child_iterator == first_child.end() - 1)    // when child's iterator achieves the last element
+                child_iterator = first_child.begin();       // go to the beginning
             else
                 child_iterator++;
 
-            if (parent_iterator == first_parent.end() - 1)
+            if (parent_iterator == first_parent.end() - 1) // same for the parent
                 parent_iterator = first_parent.begin();
             else
                 parent_iterator++;
-        } else {    // jesli miasto juz wystapilo to pomin i idz dalej
+        } else { // if a child already has that gene (city), go to the next parent's gene (city)
             if (parent_iterator == first_parent.end() - 1)
                 parent_iterator = first_parent.begin();
             else
@@ -917,6 +913,7 @@ void Graph::ordered_crossover(vector<int> &first_parent, vector<int> &second_par
     child_iterator = second_child.begin() + k2 + 1;
     parent_iterator = second_parent.begin() + k2 + 1;
 
+    // second child follows suit
     while (child_iterator != second_child.begin() + k1) {
         if (second_child.end() == find(second_child.begin(), second_child.end(), *parent_iterator)) {
             *child_iterator = *parent_iterator;
@@ -942,32 +939,134 @@ void Graph::ordered_crossover(vector<int> &first_parent, vector<int> &second_par
     second_parent = second_child;
 }
 
-void Graph::inversion_mutation(vector<int> &path) {
-    int rand1, rand2;   // rand 1 -dolna granica, rand2 - gorna granica
-    do {
-        rand1 = rand() % dimension;
-        rand2 = rand() % dimension;
-    } while (rand1 == rand2);
+static void PMX(vector<int> &first_parent, vector<int> &second_parent) {
+    int dimension = first_parent.size();
+    int k1, k2;
+    vector<int> first_child(dimension, -1);
+    vector<int> second_child(dimension, -1);
 
-    if (rand1 > rand2) {
-        swap(rand1, rand2);
+    struct pair
+    {
+        int first_idx;
+        int second_idx;
+    };
+
+    vector<pair> map;
+
+    do {
+        k1 = rand() % (dimension -1);
+        k2 = rand() % (dimension -1);  //in case of hitting last index, while loop won't break (numbers from 1 to n-1)
+    } while (k1 == k2);
+
+    if (k1 > k2) {
+        swap(k1, k2);
     }
 
-    for (int i = rand1, j = rand2; i < j; ++i, --j) {
-        swap(path[i], path[j]);
+    for (int i = k1; i <= k2; i++) {
+        first_child[i] = second_parent[i];
+        second_child[i] = first_parent[i];
+        pair p = {.first_idx = first_parent[i], .second_idx = second_parent[i]};
+        map.push_back(p);
+    }
+
+    // First child
+    for (int i = 0; i < dimension; i++) {
+        if (first_child[i] != -1) continue;
+
+        bool exists_in_map = false;
+        for (int j = 0; j < map.size(); j++) {
+            if (first_parent[i] == map[j].first_idx || first_parent[i] == map[j].second_idx) {
+                exists_in_map = true;
+                break;
+            }
+        }
+
+        if (first_child[i] == -1
+            && first_child.end () == find(first_child.begin(), first_child.end(), first_parent[i])
+            && !exists_in_map) {
+            first_child[i] = first_parent[i];
+            cout << endl << "I: " << i << " val: " << first_parent[i] << endl;
+        }
+    }
+
+    for (int i = 0; i < dimension; i++) {
+        int val = first_parent[i];
+        if (first_child[i] == -1) {
+            vector<int> used_values;
+            used_values.push_back(val);
+            while (first_child.end() != find(first_child.begin(), first_child.end(), val)) {
+                for (int j = 0; j < map.size(); j++) {
+                    if (val == map[j].first_idx &&
+                        used_values.end() == find(used_values.begin(), used_values.end(), map[j].second_idx)) {
+                        val = map[j].second_idx;
+                        used_values.push_back(val);
+                        break;
+                    } else if (val == map[j].second_idx &&
+                               used_values.end() == find(used_values.begin(), used_values.end(), map[j].first_idx)) {
+                        val = map[j].first_idx;
+                        used_values.push_back(val);
+                        break;
+                    }
+                }
+            }
+            first_child[i] = val;
+        }
+    }
+
+    // Second child
+    for (int i = 0; i < dimension; i++) {
+        if (second_child[i] != -1) continue;
+        bool exists_in_map = false;
+        for (int j = 0; j < map.size(); j++) {
+            if (second_parent[i] == map[j].first_idx || second_parent[i] == map[j].second_idx) {
+                exists_in_map = true;
+                break;
+            }
+        }
+
+        if (second_child[i] == -1
+            && second_child.end () == find(second_child.begin(), second_child.end(), second_parent[i])
+            && !exists_in_map) {
+            second_child[i] = second_parent[i];
+        }
+    }
+
+    for (int i = 0; i < dimension; i++) {
+        int val = second_parent[i];
+        if (second_child[i] == -1) {
+            vector<int> used_values;
+            used_values.push_back(val);
+            while (second_child.end() != find(second_child.begin(), second_child.end(), val)) {
+                for (int j = 0; j < map.size(); j++) {
+                    if (val == map[j].first_idx  &&
+                        used_values.end() == find(used_values.begin(), used_values.end(), map[j].second_idx)) {
+                        val = map[j].second_idx;
+                        used_values.push_back(val);
+                        break;
+                    } else if (val == map[j].second_idx  &&
+                               used_values.end() == find(used_values.begin(), used_values.end(), map[j].first_idx)) {
+                        val = map[j].first_idx;
+                        used_values.push_back(val);
+                        break;
+                    }
+                }
+            }
+            second_child[i] = val;
+        }
     }
 }
 
 void Graph::update_pheromones(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
-    double q = dimension; // ilosc zostawionego feromonu na trasie
+    double q = dimension; // pheromone amount left on the route
     double ro = 0.5;
 
-    for (int i = 0; i < routes.size(); ++i) {
-        int route_for_i = calculate_cost(&routes[i][0]);
-        for (int j = 0; j < routes.size() - 1; ++j) {
-            int city = routes[i][j]; // jte miasto itej mrowki
+    for (int i = 0; i < routes.size(); i++) { // for each route repeat
+        int route_for_i = calculate_cost(&routes[i][0]); // calculate ant i's route cost
+        for (int j = 0; j < routes.size() - 1; j++) {
+            int city = routes[i][j]; // j city from i ant
             int next_city = routes[i][j + 1];
 
+            // updating pheromone values on the edges between two cities
             pheromones[city][next_city] = (1 - ro) * pheromones[city][next_city] + q / (double) route_for_i;
             pheromones[next_city][city] = (1 - ro) * pheromones[next_city][city] + q / (double) route_for_i;
         }
@@ -977,10 +1076,10 @@ void Graph::update_pheromones(vector<vector<double>> &pheromones, vector<vector<
 
 double Graph::get_phi(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones) {
     double a = 1.1;
-    double b = 5.5; // parametr beta regulujący wplyw visibility
+    double beta = 5.5; // beta parameter adjusting the influence of visibility
 
-    // eta przejscia do kolejnego miasta
-    double eta_ij = (double) pow(1.0 / this->matrix[first_city][second_city], b);
+    // eta of going to another city
+    double eta_ij = (double) pow(1.0 / matrix[first_city][second_city], beta);
     double tau_ij = (double) pow(pheromones[first_city][second_city], a);
     double sum = 0;
 
@@ -988,7 +1087,7 @@ double Graph::get_phi(int first_city, int second_city, Ant *ant, vector<vector<d
         if (i == first_city)
             continue;
         if (!ant->visited[i]) {
-            double eta = (double) pow(1.0 / this->matrix[first_city][i], b);
+            double eta = (double) pow(1.0 / matrix[first_city][i], beta);
             double tau = (double) pow(pheromones[first_city][i], a);
             sum += eta * tau;
         }
@@ -998,12 +1097,12 @@ double Graph::get_phi(int first_city, int second_city, Ant *ant, vector<vector<d
 }
 
 int Graph::get_next_city(vector<double> &probabilities) {
-    double x = (double) rand() / (double) RAND_MAX;
+    double val = (double) rand() / ((double) (RAND_MAX + 1));
 
     int i = 0;
     double sum = probabilities[i];
-    while (sum < x) {
-        ++i;
+    while (sum < val) { // choose next city where the sum of probabilities meets the random value
+        i++;
         sum += probabilities[i];
     }
 
@@ -1020,27 +1119,28 @@ void Graph::calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<v
         int city_i = routes[ant->number][i];    //i-te miasto mrowki
         probabilities.clear();
         probabilities.resize(dimension, 0.0);
-        for (int city_second = 0;
-             city_second < dimension; ++city_second) {    // liczenie prawdopodobienstwa dla wszsystkich miast
-            if (city_i == city_second)
+        for (int second_city = 0;
+             second_city < dimension; second_city++) {    // liczenie prawdopodobienstwa dla wszsystkich miast
+            if (city_i == second_city)
                 continue;
-            if (!ant->visited[city_second]) {
-                probabilities[city_second] = get_phi(city_i, city_second, ant, pheromones);
+            if (!ant->visited[second_city]) {
+                probabilities[second_city] = get_phi(city_i, second_city, ant, pheromones);
             }
         }
         routes[ant->number][i + 1] = get_next_city(probabilities);    // zdecydowanie do ktorej krawedzi pojsc
         ant->visited[routes[ant->number][i + 1]] = true;  // zaznaczenie w liscie odwiedzonych
     }
-
 }
 
-void Graph::pa() {
-    int best = INT32_MAX;
-    vector<int> best_path;
+void Graph::ant_colony_optimization() {
+    int result = INT_MAX;
+
     int iteration_number = 100;
     int number_of_ants = dimension;
     vector<vector<int>> ant_routes(number_of_ants);
     vector<vector<double>> pheromones(dimension);
+
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
     for (int i = 0; i < number_of_ants; ++i) {
         ant_routes[i].resize(number_of_ants, -1);
@@ -1049,7 +1149,7 @@ void Graph::pa() {
     for (int i = 0; i < dimension; ++i) {
         pheromones[i].resize(dimension);
         for (int j = 0; j < dimension; ++j) {
-            pheromones[i][j] = (double) rand() / (double) RAND_MAX * dimension / this->matrix[0][1];
+            pheromones[i][j] = (double) rand() / (double) RAND_MAX * dimension / matrix[0][1];
         }
     }
 
@@ -1067,45 +1167,137 @@ void Graph::pa() {
 
     for (int k = 0; k < dimension; ++k) {
         int temp = calculate_cost(&ant_routes[k][0]);
-        if (temp < best) {
-            best = temp;
-            best_path = ant_routes[k];
+        if (temp < result) {
+            result = temp;
+            best_path = &ant_routes[k][0];
         }
     }
 
-    cout << "Result: " << best;
+    cout << "Best Ant Colony Optimization result: " << result << "\n";
+    cout << "Best path: ";
+    for (int i = 0; i < dimension; i++) {
+        if (i < dimension - 1) {
+            cout << best_path[i] << ", ";
+        }
+        else {
+            cout << best_path[i] << "\n";
+        }
+    }
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
+    cout << "\n";
+
 }
 
-void Graph::ga() {
-    generate_population();
-    int best = INT32_MAX;
-    vector<int> best_route = this->population[0];
-    for (int j = 0; j < NUMBER_OF_GENERATIONS; ++j) {
-        choose_population();
-        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); ++i) {
-            int rand_index_1, rand_index_2;
-            do {
-                rand_index_1 = rand() % POPULATION_SIZE;
-                rand_index_2 = rand() % POPULATION_SIZE;
-            } while (rand_index_1 == rand_index_2);
+void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, move_linear_update *linear_update,
+        crossover_type *crossover) {
+    char option;
 
-            ordered_crossover(population[rand_index_1], population[rand_index_2]);
+    cout << "\n";
+    cout << "Choose neighbourhood type (swap by default): \n";
+    cout << " 1 - Swap.\n";
+    cout << " 2 - Invert.\n";
+    cout << " 3 - Insert.\n";
+    cout << "\n";
+    cin >> option;
+
+    switch (option) {
+        case '1':
+            *move = swap;
+            *linear_update = swap_linear_update;
+            *nt = SWAP;
+            break;
+        case '2':
+            *move = invert;
+            *linear_update = invert_linear_update;
+            *nt = INVERT;
+            break;
+        case '3':
+            *move = insert;
+            *linear_update = insert_linear_update;
+            *nt = INSERT;
+            break;
+        default:
+            *move = swap;
+            break;
+    }
+
+    cout << "\n";
+    cout << "Choose crossover type (OX by default): \n";
+    cout << " 1 - OX.\n";
+    cout << " 2 - PMX.\n";
+    cout << "\n";
+    cin >> option;
+
+    switch (option) {
+        case '1':
+            *crossover = OX;
+            break;
+        case '2':
+            *crossover = PMX;
+            break;
+        default:
+            *crossover = OX;
+            break;
+    }
+}
+
+
+void Graph::genetic_alrogithm() {
+    generate_population();
+    int result = INT32_MAX;
+    int first_rand_idx;
+    int second_rand_idx;
+    move_foo move; // mutation
+    move_linear_update linear_update;
+    neighbourhood_type ngbh_type;
+    crossover_type crossover;
+
+    ga_choose_params(&move, &ngbh_type, &linear_update, &crossover);
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
+    best_path = &population[0][0];
+    for (int j = 0; j < NUMBER_OF_GENERATIONS; ++j) {
+        select_mating_pool_tournament();
+        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); ++i) {
+            int first_rand_idx, second_rand_idx;
+            do {
+                first_rand_idx = rand() % POPULATION_SIZE;
+                second_rand_idx = rand() % POPULATION_SIZE;
+            } while (first_rand_idx == second_rand_idx);
+
+            crossover(population[first_rand_idx], population[second_rand_idx]);
         }
 
         for (int i = 0; i < (int) (POPULATION_SIZE * MUTATION_RATE); ++i) {
             int rand_index = rand() % POPULATION_SIZE;
-            inversion_mutation(population[rand_index]);
+            do {
+                first_rand_idx = rand() % dimension;
+                second_rand_idx = rand() % dimension;
+            } while (first_rand_idx == second_rand_idx);
+            move(&population[rand_index][0], first_rand_idx, second_rand_idx);
         }
 
         for (int k = 0; k < POPULATION_SIZE; ++k) {
-            this->fitness[k] = calculate_cost(&population[k][0]);
-            if (best > this->fitness[k]) {
-                best = this->fitness[k];
-                best_route = this->population[k];
+            fitness[k] = calculate_cost(&population[k][0]);
+            if (result > fitness[k]) {
+                result = fitness[k];
+                best_path = &population[k][0];
             }
         }
     }
 
-
-    cout << "Result: " << best << endl;
+    cout << "Best Genetic Algorithm result: " << result << "\n";
+    cout << "Best path: ";
+    for (int i = 0; i < dimension; i++) {
+        if (i < dimension - 1) {
+            cout << best_path[i] << ", ";
+        }
+        else {
+            cout << best_path[i] << "\n";
+        }
+    }
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
+    cout << "\n";
 }

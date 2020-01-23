@@ -14,6 +14,7 @@ using namespace std;
 typedef void (*move_foo)(int*, int, int);
 typedef double (*cooling_method)(double, int);
 typedef int (*move_linear_update)(int*, int*, int*, int*, int**);
+typedef void (*crossover_type)(vector<int> &, vector<int> &);
 
 enum beginning_solution {
     NATURAL,
@@ -65,16 +66,16 @@ public:
     void ts_choose_params(int *arr, neighbourhood_type *nt, beginning_solution *result, move_foo *move, move_linear_update *linear_update);
     void sa_choose_params(int *arr, neighbourhood_type *nt, beginning_solution *result, move_foo *move, cooling_method *cooling, move_linear_update *linear_update);
     void generate_population();
-    vector<int> gen_random_path();
-    void choose_population();
-    void ordered_crossover(vector<int> &first_parent, vector<int> &second_parent);
-    void inversion_mutation(vector<int> &path);
+    void select_mating_pool_tournament();
+//    void OX(vector<int> &first_parent, vector<int> &second_parent);
+//    void PMX(vector<int> &first_parent, vector<int> &second_parent);
     void update_pheromones(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
     double get_phi(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones);
     int get_next_city(vector<double> &probabilities);
     void calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones);
-    void pa();
-    void ga();
+    void ant_colony_optimization();
+    void ga_choose_params(move_foo *move, neighbourhood_type *nt, move_linear_update *linear_update, crossover_type *crossover);
+    void genetic_alrogithm();
     };
 
 

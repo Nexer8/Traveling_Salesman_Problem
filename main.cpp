@@ -197,10 +197,10 @@ int print_menu(Graph *cgraph) {
         case '0':
             return EXIT;
         case 'a':
-            cgraph->pa();
+            cgraph->ant_colony_optimization();
             break;
         case 'b':
-            cgraph->ga();
+            cgraph->genetic_alrogithm();
             break;
         default:
             cout << "Wrong option, try again!\n";
