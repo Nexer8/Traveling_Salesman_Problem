@@ -197,7 +197,31 @@ int print_menu(Graph *cgraph) {
         case '0':
             return EXIT;
         case 'a':
-            cgraph->ant_colony_optimization();
+            char option;
+
+            cout << "\n";
+            cout << "Choose pheromones update type (density by default): \n";
+            cout << " 1 - DAS.\n";
+            cout << " 2 - CAS.\n";
+            cout << " 3 - QAS.\n";
+            cout << "\n";
+            cin >> option;
+
+            switch (option) {
+                case '1':
+                    cgraph->das_ant_colony_optimization();
+                    break;
+                case '2':
+                    cgraph->cas_ant_colony_optimization();
+                    break;
+                case '3':
+                    cgraph->qas_ant_colony_optimization();
+                    break;
+                default:
+                    cgraph->das_ant_colony_optimization();
+
+                    break;
+            }
             break;
         case 'b':
             cgraph->genetic_alrogithm();

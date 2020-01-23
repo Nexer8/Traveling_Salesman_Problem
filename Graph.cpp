@@ -20,6 +20,7 @@
 #define NUMBER_OF_TOURNAMENTS 5
 #define CROSS_RATE 0.2
 #define MUTATION_RATE 0.02
+#define ACO_NUMBER_OF_ITERATIONS 100
 
 #define STEPS_IN_GEN dimension
 #define CADENCE dimension
@@ -927,7 +928,7 @@ static void OX(vector<int> &first_parent, vector<int> &second_parent) {
                 parent_iterator = second_parent.begin();
             else
                 parent_iterator++;
-        } else {    // jesli miasto juz wystapilo to pomin i idz dalej
+        } else {
             if (parent_iterator == second_parent.end() - 1)
                 parent_iterator = second_parent.begin();
             else
@@ -1055,40 +1056,152 @@ static void PMX(vector<int> &first_parent, vector<int> &second_parent) {
     }
 }
 
-void Graph::update_pheromones(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
+static void NWOX(vector<int> &first_parent, vector<int> &second_parent) {
+    int dimension = first_parent.size();
+    int k1, k2;
+    vector<int> first_child(dimension, -1);
+    vector<int> second_child(dimension, -1);
+
+    do {
+        k1 = rand() % (dimension -1);
+        k2 = rand() % (dimension -1);  //in case of hitting last index, while loop won't break (numbers from 1 to n-1)
+    } while (k1 == k2);
+
+    if (k1 > k2) {
+        swap(k1, k2);
+    }
+
+    for (int i = k1; i <= k2; i++) {
+        first_child[i] = second_parent[i];
+        second_child[i] = first_parent[i];
+    }
+
+    // First child
+    for (int i = 0; i < k1; i++) {
+        if (first_child[i] == -1) {
+            for (int j = i + 1; j < k1; j++) {
+                if (first_child[j] != -1) {
+                    first_child[i] = first_child[j];
+                    first_child[j] = -1;
+                }
+            }
+        }
+    }
+
+    for (int i = k2 + 1; i < first_child.size(); i++) {
+        if (first_child[i] == -1) {
+            for (int j = i + 1; j < first_child.size(); j++) {
+                if (first_child[j] != -1) {
+                    first_child[i] = first_child[j];
+                    first_child[j] = -1;
+                }
+            }
+        }
+    }
+    int idx = 0;
+    for (int & i : first_child) {
+        if (i == -1) {
+            i = first_parent[k1 + idx];
+            idx++;
+        }
+    }
+
+    // Second child
+    for (int i = 0; i < k1; i++) {
+        if (second_child[i] == -1) {
+            for (int j = i + 1; j < k1; j++) {
+                if (second_child[j] != -1) {
+                    second_child[i] = second_child[j];
+                    second_child[j] = -1;
+                }
+            }
+        }
+    }
+
+    for (int i = k2 + 1; i < second_child.size(); i++) {
+        if (second_child[i] == -1) {
+            for (int j = i + 1; j < second_child.size(); j++) {
+                if (second_child[j] != -1) {
+                    second_child[i] = second_child[j];
+                    second_child[j] = -1;
+                }
+            }
+        }
+    }
+    idx = 0;
+    for (int & i : second_child) {
+        if (i == -1) {
+            i = second_parent[k1 + idx];
+            idx++;
+        }
+    }
+}
+
+void Graph::CAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
     double q = dimension; // pheromone amount left on the route
-    double ro = 0.5;
+    double ro = 0.5; // determines the amount of pheromone that evaporates in each iteration
 
     for (int i = 0; i < routes.size(); i++) { // for each route repeat
-        int route_for_i = calculate_cost(&routes[i][0]); // calculate ant i's route cost
+        int route = calculate_cost(&routes[i][0]); // calculate ant i's route cost
         for (int j = 0; j < routes.size() - 1; j++) {
             int city = routes[i][j]; // j city from i ant
             int next_city = routes[i][j + 1];
 
             // updating pheromone values on the edges between two cities
-            pheromones[city][next_city] = (1 - ro) * pheromones[city][next_city] + q / (double) route_for_i;
-            pheromones[next_city][city] = (1 - ro) * pheromones[next_city][city] + q / (double) route_for_i;
+            pheromones[city][next_city] = (1 - ro) * pheromones[city][next_city] + q / (double) route; // pheromone's amount decreases depending on the cost of a route
+            pheromones[next_city][city] = (1 - ro) * pheromones[next_city][city] + q / (double) route; // works in both ways
         }
     }
-
 }
 
-double Graph::get_phi(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones) {
-    double a = 1.1;
-    double beta = 5.5; // beta parameter adjusting the influence of visibility
+void Graph::QAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
+    double q = dimension; // pheromone amount left on the route
+    double ro = 0.5; // determines the amount of pheromone that evaporates in each iteration
+
+    for (int i = 0; i < routes.size(); i++) { // for each route repeat
+        for (int j = 0; j < routes.size() - 1; j++) {
+            int city = routes[i][j]; // j city from i ant
+            int next_city = routes[i][j + 1];
+
+            // updating pheromone values on the edges between two cities
+            pheromones[city][next_city] = (1 - ro) * pheromones[city][next_city] + q / (double) matrix[city][next_city]; // pheromone's amount decreases depending on the cost of the edge
+            pheromones[next_city][city] = (1 - ro) * pheromones[next_city][city] + q / (double) matrix[next_city][city]; // works in both ways
+        }
+    }
+}
+
+void Graph::DAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
+    double q = dimension; // pheromone amount left on the route
+    double ro = 0.5; // determines the amount of pheromone that evaporates in each iteration
+
+    for (int i = 0; i < routes.size(); i++) { // for each route repeat
+        for (int j = 0; j < routes.size() - 1; j++) {
+            int city = routes[i][j]; // j city from i ant
+            int next_city = routes[i][j + 1];
+
+            // updating pheromone values on the edges between two cities
+            pheromones[city][next_city] = (1 - ro) * pheromones[city][next_city] + q; // pheromone's amount decreases depending on a constant
+            pheromones[next_city][city] = (1 - ro) * pheromones[next_city][city] + q; // works in both ways
+        }
+    }
+}
+
+double Graph::calculate_probability(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones) {
+    double alpha = 1; // alpha parameter adjusting the influence of pheromones
+    double beta = 4.5; // beta parameter adjusting the influence of visibility
 
     // eta of going to another city
     auto eta_ij = (double) pow(1.0 / matrix[first_city][second_city], beta);
-    auto tau_ij = (double) pow(pheromones[first_city][second_city], a);
+    auto tau_ij = (double) pow(pheromones[first_city][second_city], alpha);
     double sum = 0;
 
     for (int i = 0; i < dimension; ++i) {
-        if (i == first_city)
-            continue;
+        if (i == first_city) continue;
+
         if (!ant->visited[i]) {
             auto eta = (double) pow(1.0 / matrix[first_city][i], beta);
-            auto tau = (double) pow(pheromones[first_city][i], a);
-            sum += eta * tau;
+            auto tau = (double) pow(pheromones[first_city][i], alpha);
+            sum += eta * tau; // a sum of what's left from the available cities
         }
     }
 
@@ -1111,31 +1224,29 @@ int Graph::get_next_city(vector<double> &probabilities) {
 void Graph::calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones) {
     vector<double> probabilities;
 
-    routes[ant->number][0] = ant->number;   // wierzcholek poczatkowy (0) dla mroki n to n
-    ant->visited[ant->number] = true;       // jest odwiedzony
+    routes[ant->idx][0] = ant->idx; // each ant's starting city depends on its index
+    ant->visited[ant->idx] = true; // we mark the starting city as visited
 
     for (int i = 0; i < dimension - 1; ++i) {
-        int city_i = routes[ant->number][i];    //i-te miasto mrowki
+        int city = routes[ant->idx][i]; // city of index i
         probabilities.clear();
         probabilities.resize(dimension, 0.0);
-        for (int second_city = 0;
-             second_city < dimension; second_city++) {    // liczenie prawdopodobienstwa dla wszsystkich miast
-            if (city_i == second_city)
+        for (int second_city = 0; second_city < dimension; second_city++) { // calculating the probabilities for all the cities
+            if (city == second_city)
                 continue;
-            if (!ant->visited[second_city]) {
-                probabilities[second_city] = get_phi(city_i, second_city, ant, pheromones);
+            if (!ant->visited[second_city]) { // if the ant hasn't visited the city yet, then we calculate the probability
+                probabilities[second_city] = calculate_probability(city, second_city, ant, pheromones);
             }
         }
-        routes[ant->number][i + 1] = get_next_city(probabilities);    // zdecydowanie do ktorej krawedzi pojsc
-        ant->visited[routes[ant->number][i + 1]] = true;  // zaznaczenie w liscie odwiedzonych
+        routes[ant->idx][i + 1] = get_next_city(probabilities); // deciding where to go next
+        ant->visited[routes[ant->idx][i + 1]] = true; // marking the city as visited
     }
 }
 
-void Graph::ant_colony_optimization() {
+void Graph::das_ant_colony_optimization() {
     int result = INT_MAX;
 
-    int iteration_number = 100;
-    int number_of_ants = dimension;
+    int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
     vector<vector<int>> ant_routes(number_of_ants);
     vector<vector<double>> pheromones(dimension);
 
@@ -1145,34 +1256,149 @@ void Graph::ant_colony_optimization() {
         ant_routes[i].resize(number_of_ants, -1);
     }
 
-    for (int i = 0; i < dimension; ++i) {
+    for (int i = 0; i < dimension; i++) {
         pheromones[i].resize(dimension);
-        for (int j = 0; j < dimension; ++j) {
+        for (int j = 0; j < dimension; j++) {
+            // setting up the same amount of pheromones at the beginning in order to avoid taking the greedy path
             pheromones[i][j] = (double) rand() / (double) RAND_MAX * dimension / matrix[0][1];
         }
     }
 
-    for (int i = 0; i < iteration_number; ++i) {
-        for (int j = 0; j < number_of_ants; ++j) {
+    for (int i = 0; i < ACO_NUMBER_OF_ITERATIONS; i++) {
+        for (int j = 0; j < number_of_ants; j++) {
             for (int & it : ant_routes[j]) {
-                it = -1; // przygotowanie trasy
+                it = -1; // preparing the route
             }
-            Ant *ant = new Ant(j, dimension);
+            Ant *ant = new Ant(j, dimension); // creating a new ant
             calculate_ant_routes(ant, ant_routes, pheromones);
         }
-        update_pheromones(pheromones, ant_routes);
+        DAS(pheromones, ant_routes); // updating the pheromones values
     }
 
 
-    for (int k = 0; k < dimension; ++k) {
-        int temp = calculate_cost(&ant_routes[k][0]);
-        if (temp < result) {
-            result = temp;
-            best_path = &ant_routes[k][0];
+    for (int i = 0; i < dimension; i++) {
+        int temp_res = calculate_cost(&ant_routes[i][0]);
+        if (temp_res < result) {
+            result = temp_res;
+            best_path = &ant_routes[i][0]; // choosing the best result and the best path
         }
     }
 
-    cout << "Best Ant Colony Optimization result: " << result << "\n";
+    cout << "Best DAS Ant Colony Optimization result: " << result << "\n";
+    cout << "Best path: ";
+    for (int i = 0; i < dimension; i++) {
+        if (i < dimension - 1) {
+            cout << best_path[i] << ", ";
+        }
+        else {
+            cout << best_path[i] << "\n";
+        }
+    }
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
+    cout << "\n";
+
+}
+
+void Graph::qas_ant_colony_optimization() {
+    int result = INT_MAX;
+
+    int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
+    vector<vector<int>> ant_routes(number_of_ants);
+    vector<vector<double>> pheromones(dimension);
+
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
+    for (int i = 0; i < number_of_ants; ++i) {
+        ant_routes[i].resize(number_of_ants, -1);
+    }
+
+    for (int i = 0; i < dimension; i++) {
+        pheromones[i].resize(dimension);
+        for (int j = 0; j < dimension; j++) {
+            // setting up the same amount of pheromones at the beginning in order to avoid taking the greedy path
+            pheromones[i][j] = (double) rand() / (double) RAND_MAX * dimension / matrix[0][1];
+        }
+    }
+
+    for (int i = 0; i < ACO_NUMBER_OF_ITERATIONS; i++) {
+        for (int j = 0; j < number_of_ants; j++) {
+            for (int & it : ant_routes[j]) {
+                it = -1; // preparing the route
+            }
+            Ant *ant = new Ant(j, dimension); // creating a new ant
+            calculate_ant_routes(ant, ant_routes, pheromones);
+        }
+        QAS(pheromones, ant_routes); // updating the pheromones values
+    }
+
+
+    for (int i = 0; i < dimension; i++) {
+        int temp_res = calculate_cost(&ant_routes[i][0]);
+        if (temp_res < result) {
+            result = temp_res;
+            best_path = &ant_routes[i][0]; // choosing the best result and the best path
+        }
+    }
+
+    cout << "Best QAS Ant Colony Optimization result: " << result << "\n";
+    cout << "Best path: ";
+    for (int i = 0; i < dimension; i++) {
+        if (i < dimension - 1) {
+            cout << best_path[i] << ", ";
+        }
+        else {
+            cout << best_path[i] << "\n";
+        }
+    }
+    chrono::steady_clock::time_point end = chrono::steady_clock::now();
+    cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
+    cout << "\n";
+
+}
+
+void Graph::cas_ant_colony_optimization() {
+    int result = INT_MAX;
+
+    int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
+    vector<vector<int>> ant_routes(number_of_ants);
+    vector<vector<double>> pheromones(dimension);
+
+    chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
+    for (int i = 0; i < number_of_ants; ++i) {
+        ant_routes[i].resize(number_of_ants, -1);
+    }
+
+    for (int i = 0; i < dimension; i++) {
+        pheromones[i].resize(dimension);
+        for (int j = 0; j < dimension; j++) {
+            // setting up the same amount of pheromones at the beginning in order to avoid taking the greedy path
+            pheromones[i][j] = (double) rand() / (double) RAND_MAX * dimension / matrix[0][1];
+        }
+    }
+
+    for (int i = 0; i < ACO_NUMBER_OF_ITERATIONS; i++) {
+        for (int j = 0; j < number_of_ants; j++) {
+            for (int & it : ant_routes[j]) {
+                it = -1; // preparing the route
+            }
+            Ant *ant = new Ant(j, dimension); // creating a new ant
+            calculate_ant_routes(ant, ant_routes, pheromones);
+        }
+        CAS(pheromones, ant_routes); // updating the pheromones values
+    }
+
+
+    for (int i = 0; i < dimension; i++) {
+        int temp_res = calculate_cost(&ant_routes[i][0]);
+        if (temp_res < result) {
+            result = temp_res;
+            best_path = &ant_routes[i][0]; // choosing the best result and the best path
+        }
+    }
+
+    cout << "Best CAS Ant Colony Optimization result: " << result << "\n";
     cout << "Best path: ";
     for (int i = 0; i < dimension; i++) {
         if (i < dimension - 1) {
@@ -1221,6 +1447,7 @@ void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_t
     cout << "Choose crossover type (OX by default): \n";
     cout << " 1 - OX.\n";
     cout << " 2 - PMX.\n";
+    cout << " 3 - NWOX.\n";
     cout << "\n";
     cin >> option;
 
@@ -1231,6 +1458,8 @@ void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_t
         case '2':
             *crossover = PMX;
             break;
+        case '3':
+            *crossover = NWOX;
         default:
             *crossover = OX;
             break;
@@ -1241,41 +1470,42 @@ void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_t
 void Graph::genetic_alrogithm() {
     generate_population();
     int result = INT32_MAX;
-    int first_rand_idx;
-    int second_rand_idx;
+
     move_foo mutate; // mutation
     neighbourhood_type ngbh_type;
-    crossover_type crossover;
+    crossover_type crossover; // crossover operator - OX and PMX available
 
-    ga_choose_params(&mutate, &ngbh_type, &crossover);
+    ga_choose_params(&mutate, &ngbh_type, &crossover); // choose mutation and crossover types
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
-    best_path = &population[0][0];
-    for (int j = 0; j < NUMBER_OF_GENERATIONS; ++j) {
-        select_mating_pool_tournament();
-        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); ++i) {
+    best_path = &population[0][0]; // at first, the best path is the first available one
+    for (int j = 0; j < NUMBER_OF_GENERATIONS; ++j) { // repeat all for number of generations
+        int first_rand_idx;
+        int second_rand_idx;
+        select_mating_pool_tournament(); // select the mating pool
+        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); ++i) { // CROSS_RATE tells us how often we do crossovers
             do {
                 first_rand_idx = rand() % POPULATION_SIZE;
                 second_rand_idx = rand() % POPULATION_SIZE;
             } while (first_rand_idx == second_rand_idx);
 
-            crossover(population[first_rand_idx], population[second_rand_idx]);
+            crossover(population[first_rand_idx], population[second_rand_idx]); // the actual crossover operation
         }
 
-        for (int i = 0; i < (int) (POPULATION_SIZE * MUTATION_RATE); i++) {
+        for (int i = 0; i < (int) (POPULATION_SIZE * MUTATION_RATE); i++) { // then we do the mutation
             int rand_index = rand() % POPULATION_SIZE;
             do {
                 first_rand_idx = rand() % dimension;
                 second_rand_idx = rand() % dimension;
             } while (first_rand_idx == second_rand_idx);
-            mutate(&population[rand_index][0], first_rand_idx, second_rand_idx);
+            mutate(&population[rand_index][0], first_rand_idx, second_rand_idx); // the actual mutation operation
         }
 
-        for (int k = 0; k < POPULATION_SIZE; k++) {
-            fitness[k] = calculate_cost(&population[k][0]);
-            if (result > fitness[k]) {
-                result = fitness[k];
-                best_path = &population[k][0];
+        for (int i = 0; i < POPULATION_SIZE; i++) { // choosing which population has the best fitness function - which path has the lowest cost
+            fitness[i] = calculate_cost(&population[i][0]);
+            if (result > fitness[i]) {
+                result = fitness[i];
+                best_path = &population[i][0]; // getting the best path and the best solution
             }
         }
     }

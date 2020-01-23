@@ -67,14 +67,17 @@ public:
     void sa_choose_params(int *arr, neighbourhood_type *nt, beginning_solution *result, move_foo *move, cooling_method *cooling, move_linear_update *linear_update);
     void generate_population();
     void select_mating_pool_tournament();
-    void update_pheromones(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
-    double get_phi(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones);
+    void CAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
+    void DAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
+    void QAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
+    double calculate_probability(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones);
     static int get_next_city(vector<double> &probabilities);
     void calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones);
-    void ant_colony_optimization();
+    void das_ant_colony_optimization();
+    void cas_ant_colony_optimization();
+    void qas_ant_colony_optimization();
     static void ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_type *crossover);
     void genetic_alrogithm();
     };
-
 
 #endif //PEA_0_GRAPH_H

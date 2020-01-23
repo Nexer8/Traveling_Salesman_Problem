@@ -4,8 +4,8 @@
 
 #include "Ant.h"
 
-Ant::Ant(int number, int number_of_vertex) {
-    this->number = number;
+Ant::Ant(int index, int number_of_vertex) {
+    this->idx = index;
     this->visited.resize(number_of_vertex, false);
 }
 

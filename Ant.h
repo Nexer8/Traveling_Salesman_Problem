@@ -8,9 +8,9 @@
 
 class Ant {
 public:
-    int number;
+    int idx;
     std::vector<bool> visited;
-    Ant(int number, int number_of_vertex);
+    Ant(int index, int number_of_vertex);
     ~Ant();
 };
 
