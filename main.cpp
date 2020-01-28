@@ -102,7 +102,6 @@ int print_menu(Graph *cgraph) {
             }
             break;
         case '3':
-            /* TODO: This part needs to be moved to another function that will generate permutations */
             arr = (int *)malloc(sizeof(int) * cgraph->get_dimension());
             for (int i = 0; i < cgraph->get_dimension(); i++) {
                 arr[i] = i;

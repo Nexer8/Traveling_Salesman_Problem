@@ -15,11 +15,14 @@
 #define GEOMETRIC_COOLING_CONST 5
 #define REPEAT_VAL 3
 
+/* Genetic Algorithm */
 #define POPULATION_SIZE 5000
 #define NUMBER_OF_GENERATIONS 500
 #define NUMBER_OF_TOURNAMENTS 5
 #define CROSS_RATE 0.2
 #define MUTATION_RATE 0.02
+
+/* ACO */
 #define ACO_NUMBER_OF_ITERATIONS 100
 
 #define STEPS_IN_GEN dimension
@@ -828,6 +831,8 @@ void Graph::simulated_annealing() {
 }
 
 void Graph::generate_population() {
+    population.clear();
+    fitness.clear();
     population.reserve(POPULATION_SIZE);
     fitness.reserve(POPULATION_SIZE);
 
@@ -847,10 +852,10 @@ void Graph::select_mating_pool_tournament() { // tournament mating pool selectio
     vector<vector<int>> mating_pool;
     mating_pool.reserve(POPULATION_SIZE);
 
-    for (int j = 0; j < POPULATION_SIZE; ++j) {
+    for (int j = 0; j < POPULATION_SIZE; j++) {
         int best = INT_MAX;
         int best_idx = 0;
-        for (int i = 0; i < NUMBER_OF_TOURNAMENTS; ++i) {
+        for (int i = 0; i < NUMBER_OF_TOURNAMENTS; i++) {
             int rand_idx = rand() % POPULATION_SIZE; // draw a random index
             int rand_idx_val = fitness[rand_idx];
             if (best > rand_idx_val) { // choose the best permutation from the randomly generated ones
@@ -1054,6 +1059,8 @@ static void PMX(vector<int> &first_parent, vector<int> &second_parent) {
             second_child[i] = val;
         }
     }
+    first_parent = first_child;
+    second_parent = second_child;
 }
 
 static void NWOX(vector<int> &first_parent, vector<int> &second_parent) {
@@ -1077,64 +1084,93 @@ static void NWOX(vector<int> &first_parent, vector<int> &second_parent) {
     }
 
     // First child
-    for (int i = 0; i < k1; i++) {
+    for (int i = 0; i < first_child.size(); i++) {
+        if (first_child[i] == -1 && first_child.end() == find(first_child.begin(), first_child.end(), first_parent[i])) {
+            first_child[i] = first_parent[i];
+        }
+    }
+
+    for (int i = 0; i < k1 - 1; i++) {
         if (first_child[i] == -1) {
             for (int j = i + 1; j < k1; j++) {
                 if (first_child[j] != -1) {
                     first_child[i] = first_child[j];
                     first_child[j] = -1;
+                    break;
                 }
             }
         }
     }
 
-    for (int i = k2 + 1; i < first_child.size(); i++) {
+    for (int i = first_child.size() - 1; i > k2; i--) {
         if (first_child[i] == -1) {
-            for (int j = i + 1; j < first_child.size(); j++) {
+            for (int j = i - 1; j > k2; j--) {
                 if (first_child[j] != -1) {
                     first_child[i] = first_child[j];
                     first_child[j] = -1;
+                    break;
                 }
             }
         }
     }
-    int idx = 0;
-    for (int & i : first_child) {
-        if (i == -1) {
-            i = first_parent[k1 + idx];
-            idx++;
+
+    for (int i = 0; i < first_child.size(); i++) {
+        if (first_child[i] == -1) {
+            for (int j = k1; j <= k2; j++) {
+                if (first_child[i] == -1 &&
+                    first_child.end() == find(first_child.begin(), first_child.end(), first_parent[j])) {
+                    first_child[i] = first_parent[j];
+                    break;
+                }
+            }
         }
     }
 
     // Second child
-    for (int i = 0; i < k1; i++) {
+    for (int i = 0; i < second_child.size(); i++) {
+        if (second_child[i] == -1 && second_child.end () == find(second_child.begin(), second_child.end(), second_parent[i])) {
+            second_child[i] = second_parent[i];
+        }
+    }
+
+    for (int i = 0; i < k1 - 1; i++) {
         if (second_child[i] == -1) {
             for (int j = i + 1; j < k1; j++) {
                 if (second_child[j] != -1) {
                     second_child[i] = second_child[j];
                     second_child[j] = -1;
+                    break;
                 }
             }
         }
     }
 
-    for (int i = k2 + 1; i < second_child.size(); i++) {
+    for (int i = second_child.size() - 1; i > k2; i--) {
         if (second_child[i] == -1) {
-            for (int j = i + 1; j < second_child.size(); j++) {
+            for (int j = i - 1; j > k2; j--) {
                 if (second_child[j] != -1) {
                     second_child[i] = second_child[j];
                     second_child[j] = -1;
+                    break;
                 }
             }
         }
     }
-    idx = 0;
-    for (int & i : second_child) {
-        if (i == -1) {
-            i = second_parent[k1 + idx];
-            idx++;
+
+    for (int i = 0; i < second_child.size(); i++) {
+        if (second_child[i] == -1) {
+            for (int j = k1; j <= k2; j++) {
+                if (second_child[i] == -1 &&
+                        second_child.end() == find(second_child.begin(), second_child.end(), second_parent[j])) {
+                    second_child[i] = second_parent[j];
+                    break;
+                }
+            }
         }
     }
+
+    first_parent = first_child;
+    second_parent = second_child;
 }
 
 void Graph::CAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes) {
@@ -1297,7 +1333,6 @@ void Graph::das_ant_colony_optimization() {
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
     cout << "\n";
-
 }
 
 void Graph::qas_ant_colony_optimization() {
@@ -1354,7 +1389,6 @@ void Graph::qas_ant_colony_optimization() {
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
     cout << "Duration time: " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << "[ms]" << "\n";
     cout << "\n";
-
 }
 
 void Graph::cas_ant_colony_optimization() {
@@ -1460,6 +1494,7 @@ void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_t
             break;
         case '3':
             *crossover = NWOX;
+            break;
         default:
             *crossover = OX;
             break;
@@ -1469,7 +1504,7 @@ void Graph::ga_choose_params(move_foo *move, neighbourhood_type *nt, crossover_t
 
 void Graph::genetic_alrogithm() {
     generate_population();
-    int result = INT32_MAX;
+    int result = INT_MAX;
 
     move_foo mutate; // mutation
     neighbourhood_type ngbh_type;
@@ -1479,11 +1514,11 @@ void Graph::genetic_alrogithm() {
     chrono::steady_clock::time_point begin = chrono::steady_clock::now();
 
     best_path = &population[0][0]; // at first, the best path is the first available one
-    for (int j = 0; j < NUMBER_OF_GENERATIONS; ++j) { // repeat all for number of generations
+    for (int j = 0; j < NUMBER_OF_GENERATIONS; j++) { // repeat all for number of generations
         int first_rand_idx;
         int second_rand_idx;
         select_mating_pool_tournament(); // select the mating pool
-        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); ++i) { // CROSS_RATE tells us how often we do crossovers
+        for (int i = 0; i < (int) (POPULATION_SIZE * CROSS_RATE); i++) { // CROSS_RATE tells us how often we do crossovers
             do {
                 first_rand_idx = rand() % POPULATION_SIZE;
                 second_rand_idx = rand() % POPULATION_SIZE;
