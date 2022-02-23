@@ -1,3 +1,0 @@
-C:/Users/mariu/OneDrive/Desktop/PWr/Semestr V/PEA/Projekt/PEA_0/cmake-build-release/CMakeFiles/PEA_0.dir
-C:/Users/mariu/OneDrive/Desktop/PWr/Semestr V/PEA/Projekt/PEA_0/cmake-build-release/CMakeFiles/edit_cache.dir
-C:/Users/mariu/OneDrive/Desktop/PWr/Semestr V/PEA/Projekt/PEA_0/cmake-build-release/CMakeFiles/rebuild_cache.dir
