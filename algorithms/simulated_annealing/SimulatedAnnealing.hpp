@@ -6,7 +6,7 @@
 #define TSP_SIMULATEDANNEALING_HPP
 
 #include "../../utils/constants.hpp"
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 #define STARTING_TEMPERATURE 1e9
 #define STOPPING_TEMPERATURE 0.01
@@ -26,7 +26,7 @@ private:
 public:
     void run() override;
 
-    SimulatedAnnealing(Algorithm const & alg);
+    explicit SimulatedAnnealing(Algorithm const &alg);
 };
 
 

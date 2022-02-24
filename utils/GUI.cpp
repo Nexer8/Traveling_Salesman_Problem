@@ -3,7 +3,7 @@
 //
 
 #include "GUI.hpp"
-#include "../Algorithm.hpp"
+#include "../algorithms/Algorithm.hpp"
 #include "../algorithms/brute_force/SwapBruteForce.hpp"
 #include "../algorithms/brute_force/TreeSearchBruteForce.hpp"
 #include "../algorithms/dynamic_programming/DynamicPrograming.hpp"
@@ -19,7 +19,7 @@
 int GUI::run() {
     char option;
     string temp_opt;
-    int rc;
+    int rc = 0;
     vector<int> vec;
     string file_name;
     static Algorithm algorithm;

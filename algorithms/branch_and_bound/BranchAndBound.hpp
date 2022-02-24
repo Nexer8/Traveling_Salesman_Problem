@@ -6,15 +6,15 @@
 #define TSP_BRANCHANDBOUND_HPP
 
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 class BranchAndBound : Algorithm {
 private:
-    void branch_n_bound(vector<int> &tab, int level, int lower_bound, int distance, int &min_distance);
+    void branchNBound(vector<int> &tab, int level, int lower_bound, int distance, int &min_distance);
 
-    int min_distance_from(int v);
+    int minDistanceFrom(int v);
 
-    int second_distance_from(int v);
+    int secondDistanceFrom(int v);
 
 public:
     void run() override;

@@ -5,7 +5,7 @@
 #ifndef TSP_ANTCOLONYOPTIMIZATION_HPP
 #define TSP_ANTCOLONYOPTIMIZATION_HPP
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 #include "Ant.hpp"
 
 #define ACO_NUMBER_OF_ITERATIONS 100
@@ -20,13 +20,13 @@ class AntColonyOptimization : Algorithm {
 private:
     AntColonyOptimizationType type = AntColonyOptimizationType::DENSITY;
 
-    void calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones);
+    void calculateAntRoutes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones);
 
-    void das_ant_colony_optimization();
+    void dasAntColonyOptimization();
 
-    void cas_ant_colony_optimization();
+    void casAntColonyOptimization();
 
-    void qas_ant_colony_optimization();
+    void qasAntColonyOptimization();
 
     void CAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
 
@@ -34,7 +34,7 @@ private:
 
     void QAS(vector<vector<double>> &pheromones, vector<vector<int>> &routes);
 
-    double calculate_probability(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones);
+    double calculateProbability(int first_city, int second_city, Ant *ant, vector<vector<double>> &pheromones);
 
 public:
     void run() override;

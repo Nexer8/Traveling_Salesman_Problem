@@ -17,7 +17,7 @@ void SwapBruteForce::run() {
     swapBruteForce(0, vec);
     chrono::steady_clock::time_point end_bf = chrono::steady_clock::now();
 
-    cout << "Minimal cost: " << min_cost << "\n";
+    cout << "\nMinimal cost: " << min_cost << "\n";
     printSummary(begin_bf, end_bf);
 }
 

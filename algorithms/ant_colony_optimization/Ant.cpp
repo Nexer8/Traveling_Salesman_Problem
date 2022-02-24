@@ -5,10 +5,10 @@
 #include "Ant.hpp"
 
 Ant::Ant(int index, int number_of_vertex) {
-    this->idx = index;
-    this->visited.resize(number_of_vertex, false);
+    idx = index;
+    visited.resize(number_of_vertex, false);
 }
 
 Ant::~Ant() {
-    this->visited.clear();
+    visited.clear();
 }

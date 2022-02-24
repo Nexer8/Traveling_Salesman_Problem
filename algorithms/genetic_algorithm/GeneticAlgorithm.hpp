@@ -5,7 +5,7 @@
 #ifndef TSP_GENETICALGORITHM_HPP
 #define TSP_GENETICALGORITHM_HPP
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 #define POPULATION_SIZE 5000
 #define NUMBER_OF_GENERATIONS 500

@@ -31,8 +31,8 @@ typedef int (*move_linear_update)(int &, vector<int> &, int &, int &, vector<vec
 
 typedef void (*move_foo)(vector<int> &, int, int);
 
-const string ATSP_PATH = "../data/ATSP/";
-const string SMALL_PATH = "../data/SMALL/";
-const string TSP_PATH = "../data/TSP/";
+constexpr string_view ATSP_PATH("../data/ATSP/");
+constexpr string_view SMALL_PATH = "../data/SMALL/";
+constexpr string_view TSP_PATH = "../data/TSP/";
 
 #endif //PEA_0_MAIN_PROGRAM_H

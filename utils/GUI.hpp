@@ -5,7 +5,7 @@
 #ifndef TSP_GUI_HPP
 #define TSP_GUI_HPP
 
-#include "../Algorithm.hpp"
+#include "../algorithms/Algorithm.hpp"
 
 #include<string>
 

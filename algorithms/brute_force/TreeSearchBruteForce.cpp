@@ -47,7 +47,7 @@ void TreeSearchBruteForce::run() {
     min_cost = INT_MAX;
     vertex_vector.push_back(0);
     treeSearch(vertex_vector);
-    cout << "Minimal cost: " << min_cost << "\n";
+    cout << "\nMinimal cost: " << min_cost << "\n";
 
     chrono::steady_clock::time_point end = chrono::steady_clock::now();
 

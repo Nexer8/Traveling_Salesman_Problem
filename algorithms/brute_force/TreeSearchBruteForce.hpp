@@ -5,7 +5,7 @@
 #ifndef TSP_TREESEARCHBRUTEFORCE_HPP
 #define TSP_TREESEARCHBRUTEFORCE_HPP
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 class TreeSearchBruteForce : Algorithm {
 private:

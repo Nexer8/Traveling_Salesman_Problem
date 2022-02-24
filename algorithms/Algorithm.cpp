@@ -1,8 +1,7 @@
 #include <fstream>
 #include <cmath>
 #include "Algorithm.hpp"
-#include "utils/constants.hpp"
-#include <algorithm>
+#include "../utils/constants.hpp"
 #include <ostream>
 #include <iostream>
 #include <climits>
@@ -21,13 +20,13 @@ int Algorithm::loadData(ProblemType version,
 
     switch (version) {
         case TSP:
-            file_name = TSP_PATH + file_name;
+            file_name = string(TSP_PATH) + file_name;
             break;
         case SMALL:
-            file_name = SMALL_PATH + file_name;
+            file_name = string(SMALL_PATH) + file_name;
             break;
         case ATSP:
-            file_name = ATSP_PATH + file_name;
+            file_name = string(ATSP_PATH) + file_name;
             break;
         default:
             return EXEC_ERROR;
@@ -61,7 +60,6 @@ int Algorithm::loadData(ProblemType version,
         for (int i = 0; i < dimension; i++) {
             for (int j = 0; j < dimension; j++) {
                 file >> matrix[i][j];
-                cout << matrix[i][j] << " ";
             }
         }
 
@@ -256,7 +254,7 @@ void Algorithm::printBestPath() {
 }
 
 void Algorithm::printDuration(chrono::steady_clock::time_point begin, chrono::steady_clock::time_point end) {
-    cout << "\nDuration time: " << chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()
+    cout << "Duration time: " << chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()
          << "[ms]" << "\n\n";
 }
 

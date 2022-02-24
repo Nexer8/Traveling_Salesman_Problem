@@ -5,7 +5,7 @@
 #ifndef TSP_TABUSEARCH_HPP
 #define TSP_TABUSEARCH_HPP
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 #define NUMBER_OF_ITERATIONS 500
 
@@ -16,7 +16,7 @@ class TabuSearch : Algorithm {
 public:
     void run() override;
 
-    TabuSearch(Algorithm const & alg);
+    explicit TabuSearch(Algorithm const &alg);
 };
 
 

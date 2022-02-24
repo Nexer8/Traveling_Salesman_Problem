@@ -4,7 +4,6 @@
 
 #include <cmath>
 #include <chrono>
-#include <cstring>
 #include "SimulatedAnnealing.hpp"
 
 static inline double linear_cooling(double temperature, int it) {

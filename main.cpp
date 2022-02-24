@@ -1,4 +1,4 @@
-#include "Algorithm.hpp"
+#include "algorithms/Algorithm.hpp"
 #include "utils/GUI.hpp"
 
 using namespace std;

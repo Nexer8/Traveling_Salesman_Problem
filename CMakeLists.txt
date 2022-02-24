@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 project(TSP)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_executable(TSP
         main.cpp
-        Algorithm.cpp
-        Algorithm.hpp
+        algorithms/Algorithm.cpp
+        algorithms/Algorithm.hpp
         utils/constants.hpp
         algorithms/ant_colony_optimization/Ant.cpp
         algorithms/ant_colony_optimization/Ant.hpp
@@ -28,4 +28,4 @@ add_executable(TSP
         algorithms/dynamic_programming/DynamicPrograming.hpp
         utils/GUI.cpp
         utils/GUI.hpp
-)
+        )

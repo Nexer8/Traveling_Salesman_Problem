@@ -7,8 +7,8 @@
 #include <cmath>
 #include "AntColonyOptimization.hpp"
 
-void
-AntColonyOptimization::calculate_ant_routes(Ant *ant, vector<vector<int>> &routes, vector<vector<double>> &pheromones) {
+void AntColonyOptimization::calculateAntRoutes(Ant *ant, vector<vector<int>> &routes,
+                                               vector<vector<double>> &pheromones) {
     vector<double> probabilities;
 
     routes[ant->idx][0] = ant->idx; // each ant's starting city depends on its index
@@ -23,7 +23,7 @@ AntColonyOptimization::calculate_ant_routes(Ant *ant, vector<vector<int>> &route
             if (city == second_city)
                 continue;
             if (!ant->visited[second_city]) { // if the ant hasn't visited the city yet, then we calculate the probability
-                probabilities[second_city] = calculate_probability(city, second_city, ant, pheromones);
+                probabilities[second_city] = calculateProbability(city, second_city, ant, pheromones);
             }
         }
         routes[ant->idx][i + 1] = getNextCity(probabilities); // deciding where to go next
@@ -31,7 +31,7 @@ AntColonyOptimization::calculate_ant_routes(Ant *ant, vector<vector<int>> &route
     }
 }
 
-void AntColonyOptimization::das_ant_colony_optimization() {
+void AntColonyOptimization::dasAntColonyOptimization() {
     int result = INT_MAX;
 
     int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
@@ -58,7 +58,7 @@ void AntColonyOptimization::das_ant_colony_optimization() {
                 it = -1; // preparing the route
             }
             Ant *ant = new Ant(j, dimension); // creating a new ant
-            calculate_ant_routes(ant, ant_routes, pheromones);
+            calculateAntRoutes(ant, ant_routes, pheromones);
         }
         DAS(pheromones, ant_routes); // updating the pheromones values
     }
@@ -77,7 +77,7 @@ void AntColonyOptimization::das_ant_colony_optimization() {
     printSummary(begin, end);
 }
 
-void AntColonyOptimization::qas_ant_colony_optimization() {
+void AntColonyOptimization::qasAntColonyOptimization() {
     int result = INT_MAX;
 
     int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
@@ -104,7 +104,7 @@ void AntColonyOptimization::qas_ant_colony_optimization() {
                 it = -1; // preparing the route
             }
             Ant *ant = new Ant(j, dimension); // creating a new ant
-            calculate_ant_routes(ant, ant_routes, pheromones);
+            calculateAntRoutes(ant, ant_routes, pheromones);
         }
         QAS(pheromones, ant_routes); // updating the pheromones values
     }
@@ -123,7 +123,7 @@ void AntColonyOptimization::qas_ant_colony_optimization() {
     printSummary(begin, end);
 }
 
-void AntColonyOptimization::cas_ant_colony_optimization() {
+void AntColonyOptimization::casAntColonyOptimization() {
     int result = INT_MAX;
 
     int number_of_ants = dimension; // we take the same amount of ants as the amount of the cities
@@ -150,7 +150,7 @@ void AntColonyOptimization::cas_ant_colony_optimization() {
                 it = -1; // preparing the route
             }
             Ant *ant = new Ant(j, dimension); // creating a new ant
-            calculate_ant_routes(ant, ant_routes, pheromones);
+            calculateAntRoutes(ant, ant_routes, pheromones);
         }
         CAS(pheromones, ant_routes); // updating the pheromones values
     }
@@ -223,8 +223,8 @@ void AntColonyOptimization::DAS(vector<vector<double>> &pheromones, vector<vecto
     }
 }
 
-double AntColonyOptimization::calculate_probability(int first_city, int second_city, Ant *ant,
-                                                    vector<vector<double>> &pheromones) {
+double AntColonyOptimization::calculateProbability(int first_city, int second_city, Ant *ant,
+                                                   vector<vector<double>> &pheromones) {
     double alpha = 1; // alpha parameter adjusting the influence of pheromones
     double beta = 4.5; // beta parameter adjusting the influence of visibility
 
@@ -249,13 +249,13 @@ double AntColonyOptimization::calculate_probability(int first_city, int second_c
 void AntColonyOptimization::run() {
     switch (type) {
         case AntColonyOptimizationType::DENSITY:
-            das_ant_colony_optimization();
+            dasAntColonyOptimization();
             break;
         case AntColonyOptimizationType::QUANTITY:
-            qas_ant_colony_optimization();
+            qasAntColonyOptimization();
             break;
         case AntColonyOptimizationType::CYCLE:
-            cas_ant_colony_optimization();
+            casAntColonyOptimization();
             break;
     }
 }

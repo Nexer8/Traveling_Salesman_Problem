@@ -5,13 +5,13 @@
 #ifndef TSP_DYNAMICPROGRAMING_HPP
 #define TSP_DYNAMICPROGRAMING_HPP
 
-#include "../../Algorithm.hpp"
+#include "../Algorithm.hpp"
 
 class DynamicProgramming : Algorithm {
 public:
     void run() override;
 
-    DynamicProgramming(Algorithm const & alg);
+    explicit DynamicProgramming(Algorithm const &alg);
 };
 
 
