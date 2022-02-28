@@ -46,16 +46,15 @@ void DynamicProgramming::run() {
     }
 
     int cost;
-    best_path[0] = 0;
     for (int i = 0; i < dimension; i++) { // looking for the minimal cost cycle in the last row
         cost = dp_matrix[num_of_possible_paths - 1][i] + matrix[i][0];
         if (cost < min_cost) {
             min_cost = cost;
-            best_path[1] = i;
         }
     }
 
     // backtracking to find the best path
+    best_path[0] = 0;
     unsigned int bit_mask = (num_of_possible_paths - 1u);
     int b_cost;
     for (int i = 1; i < dimension; i++) {
