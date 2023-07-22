@@ -86,9 +86,11 @@ int BranchAndBound::secondDistanceFrom(int vertex) {
         if (i == vertex) continue;
 
         if (matrix[vertex][i] < min && i != vertex) {
-            min = matrix[vertex][i]; // finding the second minimum edge cost having an end at the vertex "vertex"
             second = min;
-        } else if (matrix[vertex][i] <= second && matrix[vertex][i] != min) second = matrix[vertex][i];
+            min = matrix[vertex][i]; // finding the second minimum edge cost having an end at the vertex "vertex"
+        } else if (matrix[vertex][i] <= second && matrix[vertex][i] != min) {
+            second = matrix[vertex][i];
+        }
     }
     return second;
 }
